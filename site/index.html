@@ -1,0 +1,839 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Quiet Matter</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap">
+<style>
+/* Layout: two full-height screens taken 1:1 from the Silence boards (1440 x 810). --u is one board pixel.
+   The dot falls into the first screen, then follows the scroll down to rest in the corner of the second. */
+:root {
+  --bg: #F6F3EC;
+  --ink: #1A1916;
+  --soft: #4A4842;
+  --muted: #615E57;
+  --dim: #8A867D;
+  --line: #DCD8CE;
+  --font: 'Bricolage Grotesque', 'Helvetica Neue', Arial, system-ui, sans-serif;
+
+  --u: clamp(0.72px, min(100vw / 1440, 100vh / 810), 1.2px);
+  --gutter: calc(var(--u) * 72);
+  --head-h: calc(var(--u) * 96);
+  --foot-h: calc(var(--u) * 88);
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --screen: calc(100vh - var(--sat) - var(--sab));
+  --t-small: max(12px, calc(var(--u) * 13));
+  --t-nav: max(13px, calc(var(--u) * 14));
+  --t-logo: max(20px, calc(var(--u) * 26));
+  color-scheme: light;
+}
+@supports (height: 100svh) {
+  :root { --screen: calc(100svh - var(--sat) - var(--sab)) }
+}
+
+html { background: var(--bg); overflow: hidden }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font); font-size: var(--t-nav); line-height: 1.4;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+a { color: var(--ink); text-decoration: none }
+a:hover { color: var(--muted) }
+button { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap }
+
+/* ---- fixed frame: logo and menu on top, place and the way to the manifesto at the bottom ---- */
+.bar {
+  position: fixed; left: 0; right: 0; z-index: 10;
+  box-sizing: border-box; padding-inline: var(--gutter);
+  display: flex; justify-content: space-between; background: var(--bg);
+}
+.bar > * { height: calc(var(--u) * 44); display: flex; align-items: center }
+.bar-top { top: 0; z-index: 40; height: calc(var(--sat) + var(--head-h)); padding-top: calc(var(--sat) + var(--u) * 38); align-items: flex-start }
+.bar-bottom { bottom: 0; height: calc(var(--sab) + var(--foot-h)); padding-bottom: calc(var(--sab) + var(--u) * 30); align-items: flex-end }
+.logo { font-size: var(--t-logo); font-weight: 200; letter-spacing: 0 }
+.menu-btn { padding: 0; border: 0; background: none; font-size: var(--t-nav); cursor: pointer }
+.menu-btn:hover { color: var(--muted) }
+.place, .cue { font-size: var(--t-small); color: var(--muted) }
+.cue { transition: opacity 0.3s ease }
+.cue.gone { opacity: 0; pointer-events: none }
+
+/* ---- the dot and its word ---- */
+.lockup {
+  --p: 0;
+  position: fixed; z-index: 20; left: 63.89vw; top: 57.78%;
+  display: flex; align-items: center; gap: calc(var(--u) * (16 - 2 * var(--p)));
+  height: calc(var(--u) * 32);
+  font-size: var(--t-logo); line-height: 1; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap;
+  pointer-events: none; will-change: transform;
+}
+.js .lockup { left: 0; top: 0; transition: opacity 0.35s ease }
+.lockup.away { opacity: 0 }
+html.no-drop .lockup-dot, html.no-drop .lockup-word { animation: none }
+.lockup.glide { transition: transform 0.7s cubic-bezier(0.6, 0, 0.2, 1), gap 0.7s ease }
+.lockup.glide .lockup-dot { transition: width 0.7s ease, height 0.7s ease }
+.lockup-dot {
+  flex: none; width: calc(var(--u) * (30 - 12 * var(--p))); height: calc(var(--u) * (30 - 12 * var(--p)));
+  border-radius: 50%; background: var(--ink); transform-origin: 50% 100%;
+  animation: drop 1.6s linear 0.35s both;
+}
+.lockup-dot.pulse { animation: pulse 0.55s cubic-bezier(0.3, 0, 0.2, 1) }
+@keyframes pulse { 0% { transform: scale(1) } 35% { transform: scale(1.28) } 100% { transform: scale(1) } }
+.lockup-word { animation: settle 0.7s ease-out 1.8s both }
+@keyframes drop {
+  0% { transform: translateY(calc(var(--u) * -640)); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45) }
+  50% { transform: translateY(0) scale(1.1, 0.88); animation-timing-function: cubic-bezier(0, 0.55, 0.45, 1) }
+  66% { transform: translateY(calc(var(--u) * -52)) scale(1); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45) }
+  81% { transform: translateY(0) scale(1.04, 0.95); animation-timing-function: cubic-bezier(0, 0.55, 0.45, 1) }
+  91% { transform: translateY(calc(var(--u) * -11)) scale(1); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45) }
+  100% { transform: translateY(0) scale(1) }
+}
+@keyframes settle { from { opacity: 0; transform: translateX(calc(var(--u) * -18)) } to { opacity: 1; transform: none } }
+.slots { position: fixed; inset: 0; pointer-events: none; visibility: hidden }
+.slots i { position: absolute; width: 0; height: calc(var(--u) * 32) }
+#slot-a { left: 63.89%; top: 57.78% }
+#slot-b { right: var(--gutter); bottom: calc(var(--sab) + var(--u) * 38) }
+
+/* ---- the one screen ---- */
+.hero { height: var(--screen) }
+.sheet {
+  display: grid; grid-template-columns: calc(33.333vw - var(--gutter)) minmax(0, 1fr); align-content: start;
+  padding-inline: var(--gutter);
+  padding-top: max(calc(var(--head-h) + var(--u) * 8), calc(var(--screen) * 0.2173));
+  padding-bottom: calc(var(--foot-h) + var(--u) * 24);
+}
+.label { margin: 0; padding-top: calc(var(--u) * 32); font-size: var(--t-small); line-height: calc(var(--u) * 18); font-weight: 400; color: var(--muted) }
+
+/* ---- the list: one line per venture ---- */
+.list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none }
+.row { border-top: 1px solid var(--line); padding-block: calc(var(--u) * 18); transition: border-color 0.3s ease, padding-bottom 0.4s ease }
+.row:last-child { border-bottom: 1px solid var(--line) }
+.row.open { border-top-color: var(--ink); padding-bottom: calc(var(--u) * 26) }
+.row h3 { margin: 0; font: inherit }
+.row-head {
+  display: flex; align-items: center; gap: calc(var(--u) * 20);
+  width: 100%; margin: 0; padding: 0; border: 0; background: none; text-align: left;
+}
+button.row-head, a.row-head { cursor: pointer }
+.row-dot { flex: none; width: calc(var(--u) * 14); display: flex; justify-content: center }
+.row-dot i { width: calc(var(--u) * 10); height: calc(var(--u) * 10); border-radius: 50%; background: var(--ink); transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease }
+.row-name { font-size: calc(var(--u) * 40); line-height: calc(var(--u) * 48); font-weight: 500; letter-spacing: -0.02em; color: var(--ink); transition: color 0.3s ease, transform 0.4s cubic-bezier(0.2, 0, 0.1, 1) }
+/* on hover the line comes to life before the click: the rule darkens, the dot grows, the name slides a step */
+.row:has(button.row-head:hover), .row:has(a.row-head:hover) { border-top-color: var(--soft) }
+.row:has(button.row-head:hover):not(.open) .row-dot i, .row:has(a.row-head:hover) .row-dot i { width: calc(var(--u) * 12); height: calc(var(--u) * 12) }
+button.row-head:hover .row-name, a.row-head:hover .row-name { transform: translateX(calc(var(--u) * 8)) }
+.row.open .row-name { transform: translateX(calc(var(--u) * 8)) }
+.row-type { margin-left: auto; font-size: var(--t-nav); color: var(--muted); text-align: right }
+.row-toggle { flex: none; width: calc(var(--u) * 44); height: calc(var(--u) * 44); margin-right: calc(var(--u) * -12); display: grid; place-items: center; font-size: calc(var(--u) * 24); line-height: 1; color: var(--muted) }
+button.row-head .row-toggle::before { content: "+" }
+.row.open .row-toggle { color: var(--ink) }
+.row.open button.row-head .row-toggle::before { content: "\2212" }
+.row.open .row-dot i { width: calc(var(--u) * 14); height: calc(var(--u) * 14) }
+.list.has-open .row:not(.open) .row-dot i { background: var(--dim) }
+.list.has-open .row:not(.open) .row-name { color: var(--dim) }
+.list.has-open .row:not(.open) button.row-head:hover .row-name, a.row-head:hover .row-name { color: var(--soft) }
+.detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease }
+.row.open .detail { grid-template-rows: 1fr }
+.detail > div { min-height: 0; overflow: hidden; visibility: hidden; transition: visibility 0s 0.4s }
+.row.open .detail > div { visibility: visible; transition-delay: 0s }
+.detail p { margin: 0; padding-left: calc(var(--u) * 34); font-size: max(14px, calc(var(--u) * 18)); line-height: 1.6; color: var(--soft) }
+.detail p:first-child { padding-top: calc(var(--u) * 8) }
+
+/* ---- views: pages of their own, laid over the screen ---- */
+.view { position: fixed; inset: 0; z-index: 8; box-sizing: border-box; overflow-y: auto; background: var(--bg); opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0s 0.3s }
+.view.open { opacity: 1; visibility: visible; transition-delay: 0s }
+.statement {
+  margin: 0; border-top: 1px solid var(--ink);
+  padding: calc(var(--u) * 18) 0 0 calc(var(--u) * 34);
+  font-size: calc(var(--u) * 40); line-height: calc(var(--u) * 48); font-weight: 500; letter-spacing: -0.02em;
+}
+.statement span { display: block; text-wrap: balance }
+/* the statement writes itself, one line after the other */
+.view .label, .statement { opacity: 0; transform: translateY(calc(var(--u) * 10)); transition: opacity 0.5s ease, transform 0.5s ease }
+.statement span { opacity: 0; transform: translateY(calc(var(--u) * 10)); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0, 0.1, 1) }
+.view.open .label, .view.open .statement { opacity: 1; transform: none; transition-delay: 0.15s }
+.view.open .statement span { opacity: 1; transform: none }
+.view.open .statement span:nth-child(1) { transition-delay: 0.45s }
+.view.open .statement span:nth-child(2) { transition-delay: 0.95s }
+.view .block { opacity: 0; transform: translateY(calc(var(--u) * 12)); transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0, 0.1, 1) }
+.view.open .block { opacity: 1; transform: none }
+.view.open .block:nth-child(2) { transition-delay: 0.6s }
+.view.open .block:nth-child(3) { transition-delay: 0.75s }
+.view.open .block:nth-child(4) { transition-delay: 0.9s }
+.view.open .block:nth-child(5) { transition-delay: 1.05s }
+.view.open .block:nth-child(6) { transition-delay: 1.15s }
+.view.open .block:nth-child(7) { transition-delay: 1.25s }
+.view.open .block:nth-child(8) { transition-delay: 1.35s }
+.view.open .block:nth-child(n+9) { transition-delay: 1.45s }
+
+/* ---- portfolio: one card per venture, the same indicators on each ---- */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--u) * 300), 1fr)); gap: calc(var(--u) * 20) calc(var(--u) * 36); margin: 0; padding: 0; list-style: none }
+.card {
+  position: relative; display: flex; flex-direction: column; gap: calc(var(--u) * 14);
+  border-top: 1px solid var(--line); padding: calc(var(--u) * 18) 0 calc(var(--u) * 28);
+  opacity: 0; transform: translateY(calc(var(--u) * 14));
+  transition: border-color 0.3s ease, opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0, 0.1, 1);
+}
+.view.open .card { opacity: 1; transform: none }
+.view.open .card:nth-child(1) { transition-delay: 0.25s }
+.view.open .card:nth-child(2) { transition-delay: 0.33s }
+.view.open .card:nth-child(3) { transition-delay: 0.41s }
+.view.open .card:nth-child(4) { transition-delay: 0.49s }
+.view.open .card:nth-child(5) { transition-delay: 0.57s }
+.view.open .card:nth-child(6) { transition-delay: 0.65s }
+.card:hover { border-top-color: var(--ink) }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: calc(var(--u) * 16) }
+.card h3 { margin: 0; font-size: calc(var(--u) * 32); line-height: 1.1; font-weight: 500; letter-spacing: -0.02em; transition: transform 0.4s cubic-bezier(0.2, 0, 0.1, 1) }
+.card:hover h3 { transform: translateX(calc(var(--u) * 6)) }
+.card-type { font-size: var(--t-small); color: var(--muted); text-align: right; white-space: nowrap }
+/* the stage: five dots, filled as far as the venture has come */
+.stage { display: flex; align-items: center; gap: calc(var(--u) * 8); margin: 0; font-size: var(--t-small); color: var(--muted) }
+.stage i { width: calc(var(--u) * 8); height: calc(var(--u) * 8); border-radius: 50%; border: 1px solid var(--ink); box-sizing: border-box; transition: background-color 0.3s ease, transform 0.3s ease }
+.stage i.on { background: var(--ink) }
+.card:hover .stage i.on + i:not(.on) { transform: scale(1.35) }
+.stage span { margin-left: calc(var(--u) * 6) }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: calc(var(--u) * 6) calc(var(--u) * 20); margin: 0; font-size: var(--t-nav); font-variant-numeric: tabular-nums }
+.facts dt { color: var(--muted); font-weight: 400 }
+.facts dd { margin: 0; color: var(--ink) }
+.facts dd.none { color: var(--dim) }
+.card p { margin: calc(var(--u) * 6) 0 0; font-size: max(14px, calc(var(--u) * 16)); line-height: 1.55; color: var(--soft) }
+
+/* ---- careers: a statement, a few quiet reasons, the open roles, the way in ---- */
+.careers-col { display: flex; flex-direction: column; gap: calc(var(--u) * 56) }
+.careers .statement { font-size: calc(var(--u) * 34); line-height: calc(var(--u) * 42) }
+.sub { margin: 0 0 calc(var(--u) * 14) calc(var(--u) * 34); font-size: var(--t-small); color: var(--muted) }
+.reasons { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--u) * 220), 1fr)); gap: calc(var(--u) * 18) calc(var(--u) * 36); margin: 0; padding: 0; list-style: none }
+.reasons li { border-top: 1px solid var(--line); padding-top: calc(var(--u) * 14) }
+.reasons b { display: block; font-weight: 500; font-size: max(14px, calc(var(--u) * 17)); margin-bottom: calc(var(--u) * 4) }
+.reasons span { font-size: var(--t-nav); line-height: 1.5; color: var(--soft) }
+.roles .row-name { font-size: calc(var(--u) * 32); line-height: calc(var(--u) * 40) }
+.roles .row-type { display: flex; flex-direction: column; align-items: flex-end; gap: calc(var(--u) * 2); line-height: 1.3 }
+.roles .row-type em { font-style: normal; color: var(--ink); font-variant-numeric: tabular-nums }
+.roles .detail p { font-size: max(14px, calc(var(--u) * 17)) }
+.apply { display: inline-block; margin: calc(var(--u) * 12) 0 0 calc(var(--u) * 34); font-size: var(--t-nav); border-bottom: 1px solid var(--ink); padding-bottom: 2px; transition: color 0.3s ease, border-color 0.3s ease }
+.apply:hover { color: var(--muted); border-color: var(--muted) }
+/* ---- a role: its page, written like a letter ---- */
+.role .label a { color: var(--muted) }
+.role .label a:hover { color: var(--ink) }
+.role .statement, .info .statement { font-size: calc(var(--u) * 40); line-height: calc(var(--u) * 48) }
+.info .careers-col { max-width: calc(var(--u) * 720) }
+.info .role-section a { border-bottom: 1px solid var(--line); transition: border-color 0.3s ease }
+.info .role-section a:hover { border-color: var(--ink) }
+.role-meta { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 6) calc(var(--u) * 18); margin: calc(var(--u) * -32) 0 0 calc(var(--u) * 34); font-size: var(--t-nav); color: var(--muted); font-variant-numeric: tabular-nums }
+.role-meta em { font-style: normal; color: var(--ink) }
+.role .careers-col { max-width: calc(var(--u) * 640) }
+.role-section .sub { margin-bottom: calc(var(--u) * 10) }
+.role-section p, .role-section li { margin: 0; font-size: max(14px, calc(var(--u) * 17)); line-height: 1.6; color: var(--soft) }
+.role-section p + p { margin-top: calc(var(--u) * 12) }
+.role-section ul { margin: 0; padding: 0; list-style: none }
+.role-section li { position: relative; padding-left: calc(var(--u) * 34); margin-top: calc(var(--u) * 8) }
+.role-section li::before { content: ""; position: absolute; left: calc(var(--u) * 2); top: 0.62em; width: calc(var(--u) * 6); height: calc(var(--u) * 6); border-radius: 50%; background: var(--ink) }
+.role-section > p:not(.sub) { padding-left: calc(var(--u) * 34) }
+.role .apply { margin-top: 0; font-size: max(14px, calc(var(--u) * 17)) }
+.careers .mail { font-size: var(--t-nav); color: var(--muted) }
+.careers .mail a { border-bottom: 1px solid var(--line) }
+
+/* ---- the application form: a line to write on, nothing more ---- */
+.form { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 26) calc(var(--u) * 28); padding-left: calc(var(--u) * 34) }
+.form .wide { grid-column: 1 / -1 }
+.field { display: flex; flex-direction: column; gap: calc(var(--u) * 6) }
+.field label { font-size: var(--t-small); color: var(--muted) }
+.field input, .field textarea {
+  font: inherit; font-size: max(14px, calc(var(--u) * 17)); color: var(--ink); background: none;
+  border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: calc(var(--u) * 6) 0; outline: none;
+  transition: border-color 0.3s ease;
+}
+.field input::placeholder, .field textarea::placeholder { color: var(--dim) }
+.field input:focus, .field textarea:focus { border-bottom-color: var(--ink) }
+.field input:focus-visible, .field textarea:focus-visible { outline: none }
+.field textarea { resize: vertical; min-height: calc(var(--u) * 96); line-height: 1.5 }
+.field.invalid input, .field.invalid textarea { border-bottom-color: var(--ink) }
+.field.invalid label::after { content: " — required"; color: var(--ink) }
+.file { position: relative; display: flex; align-items: baseline; gap: calc(var(--u) * 14); border-bottom: 1px solid var(--line); padding: calc(var(--u) * 6) 0; font-size: max(14px, calc(var(--u) * 17)); cursor: pointer; transition: border-color 0.3s ease }
+.file:hover { border-bottom-color: var(--ink) }
+.file input { position: absolute; width: 1px; height: 1px; opacity: 0 }
+.file b { font-weight: 500; border-bottom: 1px solid var(--ink) }
+.file span { color: var(--dim) }
+.file.has span { color: var(--ink) }
+.consent { position: relative; display: flex; align-items: flex-start; gap: calc(var(--u) * 14); font-size: var(--t-nav); line-height: 1.5; color: var(--soft); cursor: pointer }
+.consent input { position: absolute; width: 1px; height: 1px; opacity: 0 }
+.consent i { flex: none; width: calc(var(--u) * 14); height: calc(var(--u) * 14); margin-top: 0.3em; border-radius: 50%; border: 1px solid var(--ink); box-sizing: border-box; transition: background-color 0.3s ease }
+.consent input:checked + i { background: var(--ink) }
+.consent input:focus-visible + i { outline: 2px solid var(--ink); outline-offset: 3px }
+.consent.invalid i { box-shadow: 0 0 0 3px var(--line) }
+.send { display: flex; align-items: baseline; gap: calc(var(--u) * 20) }
+.send button { padding: 0 0 2px; border: 0; border-bottom: 1px solid var(--ink); background: none; font-size: max(14px, calc(var(--u) * 17)); cursor: pointer; transition: color 0.3s ease, border-color 0.3s ease }
+.send button:hover { color: var(--muted); border-color: var(--muted) }
+.send button[disabled] { color: var(--dim); border-color: var(--line); cursor: default }
+.send .note { font-size: var(--t-small); color: var(--muted) }
+.sent { padding-left: calc(var(--u) * 34); font-size: max(14px, calc(var(--u) * 17)); line-height: 1.6; color: var(--ink) }
+.sent small { display: block; margin-top: calc(var(--u) * 6); font-size: var(--t-nav); color: var(--muted) }
+
+/* ---- menu: the sheet comes down from the top, then the lines arrive one by one ---- */
+.menu { position: fixed; inset: 0; z-index: 30; box-sizing: border-box; overflow-y: auto; background: var(--bg); visibility: hidden; clip-path: inset(0 0 100% 0); transition: clip-path 0.45s cubic-bezier(0.6, 0, 0.2, 1), visibility 0s 0.45s }
+.menu.open { visibility: visible; clip-path: inset(0 0 0 0); transition-delay: 0s }
+.menu .label, .menu .row { opacity: 0; transform: translateY(calc(var(--u) * 12)); transition: opacity 0.25s ease, transform 0.25s ease }
+.menu.open .label, .menu.open .row { opacity: 1; transform: none; transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0, 0.1, 1) }
+.menu.open .label { transition-delay: 0.2s }
+.menu.open .row:nth-child(1) { transition-delay: 0.3s }
+.menu.open .row:nth-child(2) { transition-delay: 0.4s }
+.menu.open .row:nth-child(3) { transition-delay: 0.5s }
+
+/* ---- phones and portrait tablets ---- */
+@media (max-width: 820px) {
+  :root { --u: 1px; --gutter: 20px; --head-h: 72px; --foot-h: 64px }
+  .bar-top { padding-top: calc(var(--sat) + 14px) }
+  .bar-bottom { padding-bottom: calc(var(--sab) + 10px) }
+  #slot-b { bottom: calc(var(--sab) + 16px) }
+  .sheet { grid-template-columns: minmax(0, 1fr); row-gap: 16px; padding-top: calc(var(--head-h) + 28px); padding-bottom: calc(var(--foot-h) + 28px) }
+  .label { padding-top: 0 }
+  .row { padding-block: 14px }
+  .row.open { padding-bottom: 20px }
+  .row-head { display: grid; grid-template-columns: 14px minmax(0, 1fr) 44px; column-gap: 14px; row-gap: 0 }
+  .row-dot { grid-column: 1; grid-row: 2 }
+  .row-name { grid-column: 2; grid-row: 2; font-size: 30px; line-height: 38px }
+  .row-type { grid-column: 2; grid-row: 1; margin: 0; text-align: left; font-size: 13px; line-height: 18px }
+  .row-toggle { grid-column: 3; grid-row: 1 / span 2; justify-self: end; margin-right: -12px }
+  .detail p { padding-left: 28px; font-size: 16px }
+  .detail p:first-child { padding-top: 6px }
+  .statement { padding: 14px 0 0 28px; font-size: 30px; line-height: 38px }
+  .cards { grid-template-columns: minmax(0, 1fr); gap: 16px }
+  .card h3 { font-size: 28px }
+  .careers-col { gap: 40px }
+  .careers .statement { font-size: 26px; line-height: 34px }
+  .sub, .apply { margin-left: 28px }
+  .roles .row-name { font-size: 26px; line-height: 34px }
+  .roles .row-type { align-items: flex-start }
+  .role .statement, .info .statement { font-size: 30px; line-height: 38px }
+  .role-meta { margin: -24px 0 0 28px }
+  .role-section li, .role-section > p:not(.sub) { padding-left: 28px }
+  .form { grid-template-columns: 1fr; gap: 20px; padding-left: 28px }
+  .sent { padding-left: 28px }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto }
+  .lockup-dot, .lockup-word { animation: none }
+  .row, .row-dot i, .row-name, .detail, .detail > div, .menu, .menu .label, .menu .row, .view, .view .label, .statement, .statement span, .careers .block, .apply, .field input, .field textarea, .file, .consent i, .send button, .card, .card h3, .stage i, .lockup.glide, .lockup.glide .lockup-dot { transition: none }
+  .lockup-dot.pulse { animation: none }
+}
+</style>
+
+<header class="bar bar-top">
+  <a class="logo" href="#top" aria-label="Quiet Matter Studio, top of page">quiet</a>
+  <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu">Menu</button>
+</header>
+
+<div class="lockup" id="lockup" aria-hidden="true"><span class="lockup-dot"></span><span class="lockup-word">matter</span></div>
+<div class="slots" aria-hidden="true"><i id="slot-a"></i><i id="slot-b"></i></div>
+
+<main id="main">
+  <section class="hero" id="top">
+    <h1 class="sr-only">Quiet Matter Studio</h1>
+  </section>
+</main>
+
+<section class="view sheet" id="evidence" aria-labelledby="evidence-title" inert>
+  <h2 class="label" id="evidence-title">Evidence</h2>
+  <ul class="cards">
+    <li class="card">
+      <div class="card-head"><h3>Meteoria</h3><span class="card-type">B2B SaaS</span></div>
+      <div class="stage" role="img" aria-label="Stage: scale"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><span>Scale</span></div>
+      <dl class="facts">
+        <dt>Founded</dt><dd>2025</dd>
+        <dt>Team</dt><dd><span class="num" data-value="30">30</span></dd>
+        <dt>Impact</dt><dd>0 to €2M in 18 months</dd>
+      </dl>
+      <p>Leading French GEO tool</p>
+    </li>
+    <li class="card">
+      <div class="card-head"><h3>Loxy</h3><span class="card-type">Industrial SME</span></div>
+      <div class="stage" role="img" aria-label="Stage: scale"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><span>Scale</span></div>
+      <dl class="facts">
+        <dt>Founded</dt><dd class="none">—</dd>
+        <dt>Team</dt><dd><span class="num" data-value="40">40</span></dd>
+        <dt>Impact</dt><dd><span class="num" data-value="102" data-prefix="+" data-suffix="%">+102%</span> net profit YoY</dd>
+      </dl>
+      <p>Electronic recycling company</p>
+    </li>
+    <li class="card">
+      <div class="card-head"><h3>Forger</h3><span class="card-type">Industrial innovation agency</span></div>
+      <div class="stage" role="img" aria-label="Stage: launch"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><span>Launch</span></div>
+      <dl class="facts">
+        <dt>Founded</dt><dd>2024</dd>
+        <dt>Impact</dt><dd class="none">In progress</dd>
+      </dl>
+      <p>Innovation consulting for industrial companies, from audit to product</p>
+    </li>
+    <li class="card">
+      <div class="card-head"><h3>Tribal</h3><span class="card-type">Industrial B2B SaaS</span></div>
+      <div class="stage" role="img" aria-label="Stage: build"><i class="on"></i><i></i><i></i><i></i><i></i><span>Build</span></div>
+      <dl class="facts">
+        <dt>Founded</dt><dd>2025</dd>
+        <dt>Impact</dt><dd class="none">In progress</dd>
+      </dl>
+      <p>AI that turns shop-floor video into industrial know-how</p>
+    </li>
+    <li class="card">
+      <div class="card-head"><h3>Mimorian</h3><span class="card-type">Industrial B2B SaaS</span></div>
+      <div class="stage" role="img" aria-label="Stage: build"><i class="on"></i><i></i><i></i><i></i><i></i><span>Build</span></div>
+      <dl class="facts">
+        <dt>Founded</dt><dd>2025</dd>
+        <dt>Impact</dt><dd class="none">In progress</dd>
+      </dl>
+      <p>AI assistant for industrial machine diagnosis</p>
+    </li>
+  </ul>
+</section>
+
+<section class="view sheet careers" id="manifesto" aria-labelledby="manifesto-title" inert>
+  <h2 class="label" id="manifesto-title">Manifesto</h2>
+  <div class="careers-col">
+    <p class="statement block"><span>Most of what moves the world is never seen.</span> <span>We build the things that matter, and we keep quiet about it.</span></p>
+  </div>
+</section>
+
+<section class="view sheet careers" id="join" aria-labelledby="join-title" inert>
+  <h2 class="label" id="join-title">Join</h2>
+  <div class="careers-col">
+    <p class="statement block"><span>We're a small team in Paris, carrying several companies at once.</span> <span>We're looking for people who want to build with us.</span></p>
+
+    <div class="block">
+      <p class="sub">Why here</p>
+      <ul class="reasons">
+        <li><b>Several companies, one team</b><span>You work across the studio's ventures, not on one product.</span></li>
+        <li><b>Ownership</b><span>Salary and a stake in what you help build.</span></li>
+        <li><b>In person</b><span>Paris, together, most days.</span></li>
+        <li><b>Early</b><span>Few people, a lot of room.</span></li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <p class="sub">Open roles</p>
+      <div class="list roles" id="roles">
+        <div class="row">
+          <h3><a class="row-head" href="#role-lead-sales">
+            <span class="row-dot" aria-hidden="true"><i></i></span>
+            <span class="row-name">Lead Sales Studio</span>
+            <span class="row-type"><span>Sales · Paris</span></span>
+            <span class="row-toggle" aria-hidden="true">→</span>
+          </a></h3>
+        </div>
+        <div class="row">
+          <h3><a class="row-head" href="#role-growth">
+            <span class="row-dot" aria-hidden="true"><i></i></span>
+            <span class="row-name">Growth Manager</span>
+            <span class="row-type"><span>Growth · Paris</span></span>
+            <span class="row-toggle" aria-hidden="true">→</span>
+          </a></h3>
+        </div>
+      </div>
+    </div>
+
+    <p class="mail block">Nothing that fits? <a href="mailto:careers@quietmatter.studio">Write to us</a> anyway.</p>
+  </div>
+</section>
+
+<section class="view sheet careers role" id="role-lead-sales" aria-labelledby="role-lead-sales-title" inert>
+  <h2 class="label" id="role-lead-sales-title"><a href="#join">← Join</a></h2>
+  <div class="careers-col">
+    <p class="statement block"><span>Lead Sales Studio</span></p>
+    <p class="role-meta block"><span>Sales</span><span>Paris, in person</span><span>Full-time</span></p>
+
+    <div class="block role-section">
+      <p class="sub">About the studio</p>
+      <p>Quiet Matter is a venture studio in Paris. We build and operate several companies at once — today Meteoria, Loxy, Forger, Tribal and Mimorian — with one small team working across all of them.</p>
+    </div>
+
+    <div class="block role-section">
+      <p class="sub">About the role</p>
+      <p>You lead sales across the studio's companies. Not one product, several: a B2B SaaS, an industrial SME, an innovation agency and two early industrial software products. You close the deals that matter most, you build the sales motion each venture is missing, and you work directly with the founders.</p>
+    </div>
+
+    <div class="block role-section">
+      <p class="sub">What you'll do</p>
+      <ul>
+        <li>Own the full cycle on the studio's priority deals, from first conversation to signature</li>
+        <li>Build each venture's sales motion: process, pipeline, CRM, forecast</li>
+        <li>Work with founders on pricing, positioning and the offer itself</li>
+        <li>Coach the sales people across the ventures and set the standard they learn from</li>
+        <li>Bring what you hear from the market back to the product and marketing teams</li>
+      </ul>
+    </div>
+
+    <div class="block role-section">
+      <p class="sub">What we look for</p>
+      <ul>
+        <li>Five or more years in B2B sales with closing responsibility, and the numbers to show for it</li>
+        <li>Experience selling to industrial or enterprise accounts, with several stakeholders and long cycles</li>
+        <li>Comfortable carrying several products at once without losing depth on any of them</li>
+        <li>Structured: a clean CRM and an honest forecast are not optional for you</li>
+        <li>French and English, both fluent</li>
+      </ul>
+    </div>
+
+    <div class="block role-section">
+      <p class="sub">What we offer</p>
+      <ul>
+        <li>A transversal role with real weight on how five companies grow</li>
+        <li>A stake in what you help build</li>
+        <li>A small team, in person in Paris, with the founders</li>
+      </ul>
+    </div>
+
+
+    <div class="block role-section apply-form" data-role="Lead Sales Studio" data-poste="recyjKMIEDTBBf8kN"><p class="sub">Apply</p></div>
+  </div>
+</section>
+
+<section class="view sheet careers role" id="role-growth" aria-labelledby="role-growth-title" inert>
+  <h2 class="label" id="role-growth-title"><a href="#join">← Join</a></h2>
+  <div class="careers-col">
+    <p class="statement block"><span>Growth Manager</span></p>
+    <p class="role-meta block"><span>Growth</span><span>Paris, in person</span><span>Full-time</span></p>
+
+    <div class="block role-section">
+      <p class="sub">About the studio</p>
+      <p>Quiet Matter is a venture studio in Paris. We build and operate several companies at once — today Meteoria, Loxy, Forger, Tribal and Mimorian — with one small team working across all of them.</p>
+    </div>
+
+    <div class="block role-section">
+      <p class="sub">About the role</p>
+      <p>You run outbound growth and lead generation for every venture in the studio. You find the right accounts, reach them with something worth reading, and turn that into qualified conversations for sales — across five companies with very different markets.</p>
+    </div>
+
+    <div class="block role-section">
+      <p class="sub">What you'll do</p>
+      <ul>
+        <li>Design and run outbound campaigns: email, LinkedIn, and whatever channel works</li>
+        <li>Build the lists and the signals: who to reach, when, and why now</li>
+        <li>Own the tooling of outbound — data, enrichment, sequences — and keep it clean</li>
+        <li>Measure everything, iterate every week, and say plainly what works and what doesn't</li>
+        <li>Hand qualified meetings to sales and learn from what happens next</li>
+      </ul>
+    </div>
+
+    <div class="block role-section">
+      <p class="sub">What we look for</p>
+      <ul>
+        <li>Two or more years in outbound or growth for B2B, hands-on</li>
+        <li>At ease with the modern outbound stack, and curious about the next tool</li>
+        <li>You write short, clear messages that people actually answer</li>
+        <li>Analytical: you read the numbers before the opinions</li>
+        <li>French and English, both fluent</li>
+      </ul>
+    </div>
+
+    <div class="block role-section">
+      <p class="sub">What we offer</p>
+      <ul>
+        <li>A role across five companies, not one funnel</li>
+        <li>A stake in what you help build</li>
+        <li>A small team, in person in Paris, with the founders</li>
+      </ul>
+    </div>
+
+
+    <div class="block role-section apply-form" data-role="Growth Manager" data-poste="recmPpXjjsBfYBPvu"><p class="sub">Apply</p></div>
+  </div>
+</section>
+
+<div class="menu sheet" id="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" inert>
+  <p class="label" id="menu-title">Menu</p>
+  <nav class="list" aria-label="Sections">
+    <div class="row"><a class="row-head" href="#manifesto">
+      <span class="row-dot" aria-hidden="true"><i></i></span>
+      <span class="row-name">Manifesto</span>
+    </a></div>
+    <div class="row"><a class="row-head" href="#evidence">
+      <span class="row-dot" aria-hidden="true"><i></i></span>
+      <span class="row-name">Evidence</span>
+    </a></div>
+    <div class="row"><a class="row-head" href="#join">
+      <span class="row-dot" aria-hidden="true"><i></i></span>
+      <span class="row-name">Join</span>
+    </a></div>
+  </nav>
+</div>
+
+<footer class="bar bar-bottom">
+  <span class="place">Studio — Paris&nbsp;&nbsp;·&nbsp;&nbsp;<a href="/legal.html" style="color:inherit">Legal</a></span>
+  <a class="cue" id="cue" href="#manifesto">Manifesto</a>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var lockup = document.getElementById('lockup');
+  var main = document.getElementById('main');
+  var views = { evidence: document.getElementById('evidence'), join: document.getElementById('join'), 'role-lead-sales': document.getElementById('role-lead-sales'), 'role-growth': document.getElementById('role-growth'), manifesto: document.getElementById('manifesto') };
+  var menu = document.getElementById('menu');
+  var menuButton = document.getElementById('menu-btn');
+  var slotA = document.getElementById('slot-a');
+  var slotB = document.getElementById('slot-b');
+  var cue = document.getElementById('cue');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var geo = null;
+  var menuOpen = false;
+  var current = null; /* the open view's id, or null for the screen itself */
+  var glideTimer = 0;
+  var fine = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches && !reduce;
+  var drift = { x: 0, y: 0 };
+  var driftTarget = { x: 0, y: 0 };
+  var drifting = false;
+
+  root.classList.add('js');
+  if (fine) root.classList.add('fine');
+
+  /* The pointer pulls the dot a few pixels its way; it eases there and eases back. */
+  function driftStep() {
+    drift.x += (driftTarget.x - drift.x) * 0.08;
+    drift.y += (driftTarget.y - drift.y) * 0.08;
+    place();
+    if (Math.abs(driftTarget.x - drift.x) > 0.05 || Math.abs(driftTarget.y - drift.y) > 0.05) requestAnimationFrame(driftStep);
+    else drifting = false;
+  }
+  function setDrift(x, y) {
+    driftTarget.x = x; driftTarget.y = y;
+    if (!drifting) { drifting = true; requestAnimationFrame(driftStep); }
+  }
+  if (fine) {
+    window.addEventListener('pointermove', function (event) {
+      var w = root.clientWidth || 1, h = root.clientHeight || 1;
+      setDrift((event.clientX / w - 0.5) * 24, (event.clientY / h - 0.5) * 16);
+    }, { passive: true });
+    document.addEventListener('pointerleave', function () { setDrift(0, 0); });
+  }
+
+  /* The dot answers when something opens. */
+  var dot = lockup.querySelector('.lockup-dot');
+  function pulse() {
+    if (reduce) return;
+    dot.classList.remove('pulse');
+    void dot.offsetWidth;
+    dot.classList.add('pulse');
+  }
+  dot.addEventListener('animationend', function (event) { if (event.animationName === 'pulse') dot.classList.remove('pulse'); });
+
+  /* The dot's two places: its spot on the screen, and the bottom-right corner when a page is open. */
+  function measure() {
+    lockup.classList.remove('glide');
+    lockup.style.setProperty('--p', '1');
+    var endWidth = lockup.offsetWidth;
+    lockup.style.setProperty('--p', '0');
+    var startWidth = lockup.offsetWidth;
+    var a = slotA.getBoundingClientRect();
+    var b = slotB.getBoundingClientRect();
+    var gutter = root.clientWidth - b.right;
+    geo = {
+      x0: Math.max(gutter, Math.min(a.left, root.clientWidth - gutter - startWidth)),
+      y0: a.top,
+      x1: b.right - endWidth,
+      y1: b.top
+    };
+    place();
+  }
+  function place() {
+    if (!geo) return;
+    /* the dot lives on the screen only; on the pages it steps aside */
+    lockup.classList.toggle('away', !!current);
+    var x = geo.x0 + drift.x;
+    var y = geo.y0 + drift.y;
+    lockup.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
+    cue.classList.toggle('gone', !!current);
+  }
+  function glide() {
+    if (reduce) return;
+    lockup.classList.add('glide');
+    clearTimeout(glideTimer);
+    glideTimer = setTimeout(function () { lockup.classList.remove('glide'); }, 800);
+  }
+  window.addEventListener('resize', measure);
+  window.addEventListener('load', measure);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  measure();
+
+  /* Portfolio: the figures count up the first time the page opens. */
+  var counted = false;
+  function count() {
+    if (counted) return;
+    counted = true;
+    if (reduce) return;
+    var nums = Array.prototype.slice.call(views.evidence.querySelectorAll('.num'));
+    var start = null, duration = 1100;
+    nums.forEach(function (n) {
+      n.dataset.target = n.dataset.value;
+      n.dataset.pre = n.dataset.prefix || '';
+      n.dataset.post = n.dataset.suffix || '';
+    });
+    function frame(now) {
+      if (start === null) start = now;
+      var t = Math.min(1, (now - start) / duration);
+      var e = 1 - Math.pow(1 - t, 3);
+      nums.forEach(function (n) {
+        var v = Math.round(parseFloat(n.dataset.target) * e);
+        n.textContent = n.dataset.pre + v + n.dataset.post;
+      });
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    setTimeout(function () { requestAnimationFrame(frame); }, 350);
+  }
+
+  /* Applications. The form posts to APPLY_ENDPOINT, which holds the Airtable key server-side.
+     Until that endpoint exists, the form falls back to an email with everything filled in. */
+  var APPLY_ENDPOINT = '';
+  var APPLY_EMAIL = 'careers@quietmatter.studio';
+  var SOURCE_ID = 'recdQgCuUDHaJTrtO'; /* Airtable: Sources → "Page Career" */
+  function field(name, label, type, extra) {
+    return '<div class="field' + (extra && extra.wide ? ' wide' : '') + '"><label for="f-' + name + '">' + label + '</label>' +
+      (type === 'textarea'
+        ? '<textarea id="f-' + name + '" name="' + name + '" rows="4"' + (extra && extra.placeholder ? ' placeholder="' + extra.placeholder + '"' : '') + '></textarea>'
+        : '<input id="f-' + name + '" name="' + name + '" type="' + type + '"' + (extra && extra.required ? ' required' : '') + (extra && extra.placeholder ? ' placeholder="' + extra.placeholder + '"' : '') + (extra && extra.autocomplete ? ' autocomplete="' + extra.autocomplete + '"' : '') + '>') +
+      '</div>';
+  }
+  function buildForm(mount) {
+    var role = mount.getAttribute('data-role');
+    var form = document.createElement('form');
+    form.className = 'form';
+    form.noValidate = true;
+    form.innerHTML =
+      field('first', 'First name', 'text', { required: true, autocomplete: 'given-name' }) +
+      field('last', 'Last name', 'text', { required: true, autocomplete: 'family-name' }) +
+      field('email', 'Email', 'email', { required: true, autocomplete: 'email' }) +
+      field('phone', 'Phone', 'tel', { autocomplete: 'tel' }) +
+      field('linkedin', 'LinkedIn', 'url', { placeholder: 'https://', wide: true }) +
+      field('location', 'Where you live', 'text', { placeholder: 'Paris' }) +
+      field('availability', 'Available from', 'text', { placeholder: 'January, or three months’ notice' }) +
+      '<div class="field wide"><label for="f-cv">CV</label><label class="file" for="f-cv-input"><b>Choose a file</b><span>PDF, up to 5 MB</span><input id="f-cv-input" name="cv" type="file" accept=".pdf,application/pdf"></label></div>' +
+      field('message', 'A few words', 'textarea', { wide: true, placeholder: 'Why this role, why now. Short is fine.' }) +
+      '<label class="consent wide"><input type="checkbox" name="consent" required><i></i><span>I agree that Quiet Matter Studio keeps my application for up to two years, for recruitment only. I can ask for it to be deleted at any time.</span></label>' +
+      '<div class="send wide"><button type="submit">Send my application</button><span class="note" aria-live="polite"></span></div>';
+    mount.appendChild(form);
+    var cvInput = form.querySelector('#f-cv-input');
+    var cvLabel = form.querySelector('.file');
+    cvInput.addEventListener('change', function () {
+      var f = cvInput.files[0];
+      cvLabel.classList.toggle('has', !!f);
+      cvLabel.querySelector('span').textContent = f ? f.name : 'PDF, up to 5 MB';
+    });
+    form.querySelectorAll('input, textarea').forEach(function (el) { el.id = el.id + '-' + mount.getAttribute('data-poste'); });
+    form.querySelectorAll('label[for]').forEach(function (el) { el.htmlFor = el.htmlFor + '-' + mount.getAttribute('data-poste'); });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitForm(form, mount, role);
+    });
+  }
+  function readFile(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result).split(',')[1]); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  function submitForm(form, mount, role) {
+    var ok = true;
+    form.querySelectorAll('.field').forEach(function (f) {
+      var el = f.querySelector('input, textarea');
+      var bad = el && el.required && !el.value.trim() || (el && el.type === 'email' && el.value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(el.value));
+      f.classList.toggle('invalid', !!bad);
+      if (bad) ok = false;
+    });
+    var consent = form.querySelector('.consent');
+    var consentBad = !consent.querySelector('input').checked;
+    consent.classList.toggle('invalid', consentBad);
+    if (consentBad) ok = false;
+    if (!ok) { var first = form.querySelector('.invalid'); if (first) first.scrollIntoView({ block: 'center', behavior: reduce ? 'instant' : 'smooth' }); return; }
+    var data = new FormData(form);
+    var cv = form.querySelector('#f-cv-input-' + mount.getAttribute('data-poste')).files[0];
+    if (cv && cv.size > 5 * 1024 * 1024) { form.querySelector('.note').textContent = 'The CV is over 5 MB.'; return; }
+    var button = form.querySelector('button');
+    var note = form.querySelector('.note');
+    var payload = {
+      role: role, posteId: mount.getAttribute('data-poste'), sourceId: SOURCE_ID,
+      first: data.get('first'), last: data.get('last'), email: data.get('email'), phone: data.get('phone'),
+      linkedin: data.get('linkedin'), location: data.get('location'), availability: data.get('availability'),
+      message: data.get('message'), consent: true
+    };
+    function done() {
+      var sent = document.createElement('p');
+      sent.className = 'sent';
+      sent.innerHTML = 'Thank you, ' + (payload.first || '').replace(/[<>&]/g, '') + '. We have your application.<small>We read everything, and we come back to everyone.</small>';
+      form.replaceWith(sent);
+      pulse();
+    }
+    if (!APPLY_ENDPOINT) {
+      var body = Object.keys(payload).filter(function (k) { return ['role', 'first', 'last', 'email', 'phone', 'linkedin', 'location', 'availability', 'message'].indexOf(k) >= 0; })
+        .map(function (k) { return k + ': ' + (payload[k] || ''); }).join('\n') + (cv ? '\n\n(CV: ' + cv.name + ' — please attach it to this email)' : '');
+      window.location.href = 'mailto:' + APPLY_EMAIL + '?subject=' + encodeURIComponent('Application — ' + role) + '&body=' + encodeURIComponent(body);
+      done();
+      return;
+    }
+    button.disabled = true; note.textContent = 'Sending…';
+    (cv ? readFile(cv) : Promise.resolve(null)).then(function (b64) {
+      if (b64) payload.cv = { name: cv.name, type: cv.type || 'application/pdf', base64: b64 };
+      return fetch(APPLY_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    }).then(function (r) {
+      if (!r.ok) throw new Error('bad status');
+      done();
+    }).catch(function () {
+      button.disabled = false;
+      note.textContent = 'Something went wrong. You can write to ' + APPLY_EMAIL + '.';
+    });
+  }
+  Array.prototype.slice.call(document.querySelectorAll('.apply-form')).forEach(buildForm);
+
+  /* Menu, and the pages it leads to. */
+  function sync() {
+    main.inert = menuOpen || !!current;
+    for (var id in views) views[id].inert = menuOpen || current !== id;
+    menu.inert = !menuOpen;
+    root.classList.toggle('menu-open', menuOpen);
+    root.classList.toggle('view-open', !!current);
+  }
+  function setMenu(open) {
+    menuOpen = open;
+    menu.classList.toggle('open', open);
+    menuButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+    menuButton.textContent = open ? 'Close' : 'Menu';
+    sync();
+  }
+  function go(id, animate) {
+    setMenu(false);
+    var next = views[id] ? id : null;
+    if (next === current) return;
+    var was = current;
+    if (was) views[was].classList.remove('open');
+    current = next;
+    if (next) {
+      views[next].scrollTop = 0;
+      views[next].classList.add('open');
+      if (next === 'evidence') count();
+    }
+    sync();
+    place();
+  }
+  menuButton.addEventListener('click', function () { setMenu(!menuOpen); });
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest('a[href^="#"]');
+    if (!link) return;
+    event.preventDefault();
+    var id = link.getAttribute('href').slice(1) || 'top';
+    go(id, true);
+    try { history.pushState(null, '', '#' + id); } catch (error) { /* the address stays as it is */ }
+  });
+  window.addEventListener('popstate', function () { go((location.hash || '#top').slice(1), true); });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      if (menuOpen) { setMenu(false); menuButton.focus(); }
+      else if (current) { go('top', true); try { history.pushState(null, '', '#top'); } catch (error) {} }
+    }
+  });
+  var hash = location.hash.slice(1);
+  if (views[hash]) { root.classList.add('no-drop'); go(hash, false); }
+})();
+</script>
+
+</body></html>

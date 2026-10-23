@@ -1,0 +1,33 @@
+# Publishes the folder "site/" to the Cloudflare Pages project "quietmatter".
+# main          -> production (https://quietmatter.studio)
+# other branches -> preview (https://<branch>.quietmatter.pages.dev), to check a change before it goes live
+name: Deploy
+
+on:
+  push:
+    paths: ["site/**", ".github/workflows/deploy.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the six files are there
+        run: |
+          for f in index.html legal.html favicon.svg favicon.ico favicon-32.png apple-touch-icon.png; do
+            test -f "site/$f" || { echo "missing site/$f"; exit 1; }
+          done
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=quietmatter --branch=${{ github.ref_name }} --commit-dirty=true
