@@ -25,9 +25,27 @@ jobs:
           for f in index.html legal.html favicon.svg favicon.ico favicon-32.png apple-touch-icon.png; do
             test -f "site/$f" || { echo "missing site/$f"; exit 1; }
           done
+      - name: Check the secrets are set
+        env:
+          T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          [ -n "$T" ] || echo "::error::Secret CLOUDFLARE_API_TOKEN is missing"
+          [ -n "$A" ] || echo "::error::Secret CLOUDFLARE_ACCOUNT_ID is missing"
+          echo "::notice::account id length ${#A}"
+          [ -n "$T" ] && [ -n "$A" ]
       - name: Deploy to Cloudflare Pages
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy site --project-name=quietmatter --branch=${{ github.ref_name }} --commit-dirty=true
+      - name: Report the error
+        if: failure() && steps.deploy.outcome == 'failure'
+        env:
+          ERR: ${{ steps.deploy.outputs.command-stderr }}
+          OUT: ${{ steps.deploy.outputs.command-output }}
+        run: |
+          msg=$(printf '%s\n%s' "$ERR" "$OUT" | grep -iE 'error|✘|authentication|not found|code' | head -8 | tr '\n' ' ')
+          echo "::error::wrangler: ${msg:-no output}"
