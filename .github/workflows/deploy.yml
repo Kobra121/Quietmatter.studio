@@ -1,3 +1,4 @@
+# Last checked 26/10/2026
 # Publishes the folder "site/" to the Cloudflare Pages project "quietmatter".
 # main          -> production (https://quietmatter.studio)
 # other branches -> preview (https://<branch>.quietmatter.pages.dev), to check a change before it goes live
