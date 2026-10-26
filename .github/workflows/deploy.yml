@@ -1,4 +1,4 @@
-# Last checked 26/10/2026 11:28
+# Account: the Quiet Matter account that holds the quietmatter.studio zone
 # Publishes the folder "site/" to the Cloudflare Pages project "quietmatter".
 # main          -> production (https://quietmatter.studio)
 # other branches -> preview (https://<branch>.quietmatter.pages.dev), to check a change before it goes live
@@ -29,16 +29,14 @@ jobs:
       - name: Check the secrets are set
         env:
           T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          A: 66f4e5ea0b8fc1ca2d02a4a289d82364
         run: |
           [ -n "$T" ] || echo "::error::Secret CLOUDFLARE_API_TOKEN is missing"
-          [ -n "$A" ] || echo "::error::Secret CLOUDFLARE_ACCOUNT_ID is missing"
-          echo "::notice::account id length ${#A}"
-          [ -n "$T" ] && [ -n "$A" ]
+          [ -n "$T" ]
       - name: Check the token and the project
         env:
           T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          A: 66f4e5ea0b8fc1ca2d02a4a289d82364
         run: |
           v=$(curl -s -H "Authorization: Bearer $T" https://api.cloudflare.com/client/v4/user/tokens/verify)
           echo "::notice::token verify (user): $(echo "$v" | jq -c '{success, status: .result.status, errors: [.errors[]?.message]}')"
@@ -49,7 +47,7 @@ jobs:
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: 66f4e5ea0b8fc1ca2d02a4a289d82364
         run: |
           set -o pipefail
           npx --yes wrangler@3 pages deploy site --project-name=quietmatter --branch="${GITHUB_REF_NAME}" --commit-dirty=true 2>&1 | tee wrangler.log || {
