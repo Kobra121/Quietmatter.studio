@@ -26,24 +26,12 @@ jobs:
           for f in index.html legal.html favicon.svg favicon.ico favicon-32.png apple-touch-icon.png; do
             test -f "site/$f" || { echo "missing site/$f"; exit 1; }
           done
-      - name: Check the secrets are set
+      - name: Check the token secret is set
         env:
           T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          A: 66f4e5ea0b8fc1ca2d02a4a289d82364
         run: |
           [ -n "$T" ] || echo "::error::Secret CLOUDFLARE_API_TOKEN is missing"
           [ -n "$T" ]
-      - name: Check the token and the project
-        env:
-          T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          A: 66f4e5ea0b8fc1ca2d02a4a289d82364
-        run: |
-          v=$(curl -s -H "Authorization: Bearer $T" https://api.cloudflare.com/client/v4/user/tokens/verify)
-          echo "::notice::token verify (user): $(echo "$v" | jq -c '{success, status: .result.status, errors: [.errors[]?.message]}')"
-          va=$(curl -s -H "Authorization: Bearer $T" https://api.cloudflare.com/client/v4/accounts/$A/tokens/verify)
-          echo "::notice::token verify (account): $(echo "$va" | jq -c '{success, status: .result.status, errors: [.errors[]?.message]}')"
-          pr=$(curl -s -H "Authorization: Bearer $T" https://api.cloudflare.com/client/v4/accounts/$A/pages/projects)
-          echo "::notice::pages projects: $(echo "$pr" | jq -c '{success, names: [.result[]?.name], branch: [.result[]?.production_branch], errors: [.errors[]?.message]}')"
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
