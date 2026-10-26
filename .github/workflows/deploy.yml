@@ -35,18 +35,25 @@ jobs:
           [ -n "$A" ] || echo "::error::Secret CLOUDFLARE_ACCOUNT_ID is missing"
           echo "::notice::account id length ${#A}"
           [ -n "$T" ] && [ -n "$A" ]
-      - name: Deploy to Cloudflare Pages
-        id: deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy site --project-name=quietmatter --branch=${{ github.ref_name }} --commit-dirty=true
-      - name: Report the error
-        if: failure() && steps.deploy.outcome == 'failure'
+      - name: Check the token and the project
         env:
-          ERR: ${{ steps.deploy.outputs.command-stderr }}
-          OUT: ${{ steps.deploy.outputs.command-output }}
+          T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          msg=$(printf '%s\n%s' "$ERR" "$OUT" | grep -iE 'error|✘|authentication|not found|code' | head -8 | tr '\n' ' ')
-          echo "::error::wrangler: ${msg:-no output}"
+          v=$(curl -s -H "Authorization: Bearer $T" https://api.cloudflare.com/client/v4/user/tokens/verify)
+          echo "::notice::token verify (user): $(echo "$v" | jq -c '{success, status: .result.status, errors: [.errors[]?.message]}')"
+          va=$(curl -s -H "Authorization: Bearer $T" https://api.cloudflare.com/client/v4/accounts/$A/tokens/verify)
+          echo "::notice::token verify (account): $(echo "$va" | jq -c '{success, status: .result.status, errors: [.errors[]?.message]}')"
+          pr=$(curl -s -H "Authorization: Bearer $T" https://api.cloudflare.com/client/v4/accounts/$A/pages/projects)
+          echo "::notice::pages projects: $(echo "$pr" | jq -c '{success, names: [.result[]?.name], branch: [.result[]?.production_branch], errors: [.errors[]?.message]}')"
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          npx --yes wrangler@3 pages deploy site --project-name=quietmatter --branch="${GITHUB_REF_NAME}" --commit-dirty=true 2>&1 | tee wrangler.log || {
+            echo "::error::wrangler: $(grep -iE 'error|✘|code' wrangler.log | head -6 | tr '\n' ' ')"
+            exit 1
+          }
+          echo "::notice::$(grep -iE 'deployment complete|https://' wrangler.log | tail -2 | tr '\n' ' ')"
